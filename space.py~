@@ -1,0 +1,241 @@
+import stdio
+import sys
+import stddraw, stdaudio, math
+
+
+stddraw.setXscale(0, 1000)
+stddraw.setYscale(0, 1000)
+
+
+def title():
+    stddraw.clear(stddraw.GRAY)
+    stddraw.setPenColor(stddraw.GREEN)
+    stddraw.text(500, 950, "SPACE INVADERS")
+    stddraw.text(500, 800, "Instructions:")
+    stddraw.text(500, 700, "[A] move left, [S] stop move, [D] move right")
+    stddraw.text(500, 600, "[Q] rotate left, [W] stop rotate, [E] rotate right")
+    stddraw.text(500, 500, "[Space] to shoot")
+    stddraw.text(500, 400, "[H] for help")
+    stddraw.text(500, 300, "[X] to quit")
+    stddraw.text(500, 200, "Press any key to start")
+    stddraw.show(0)
+    while not stddraw.hasNextKeyTyped():  # keep loop while no key has been pressed
+        stddraw.show(50)  # 20 to avoid overworking computer
+    stddraw.nextKeyTyped()
+
+
+def gamescreen():
+    stddraw.clear(stddraw.BLACK)
+
+
+class player:
+    def __init__(self):  # have to store position so can move & redraw easier later on
+        self.x = 100
+        self.y = 100
+        self.radius = 50
+        self.speed = 2.5
+        # gun and bullets are not coded here because this function runs ONCE, it's used for initialisation
+        self.gunangle = 90
+        self.rotatespeed = 0
+        self.direction = None
+
+    def draw(
+        self,
+    ):  # runs every frame in loop, displays CURRENT state so it repeatedly updates
+        stddraw.setPenColor(stddraw.RED)
+        stddraw.filledCircle(self.x, self.y, self.radius)
+        stddraw.setPenColor(stddraw.PINK)
+        rad = math.radians(self.gunangle)
+        gun_width = 20
+        gun_height = 50
+        endx = self.x + gun_height * math.cos(rad)
+        endy = self.y + gun_height * math.sin(rad)
+        stddraw.setPenRadius(5)
+        stddraw.line(self.x, self.y, endx, endy)
+        stddraw.setPenRadius()
+        # cannot put stddraw.show() here as it becomes redundant(?). can just put in main
+
+    def pmoveleft(self):
+        if self.x - self.radius > 0:  # check if the player is at edge of screen
+            self.x = self.x - self.speed
+
+    def pmoveright(self):
+        if self.x + self.radius < 1000:  # check if player is on other edge of screen
+            self.x = self.x + self.speed
+
+    def gunmovement(self):
+        if self.direction == "right" and self.x - self.radius > 0:
+            self.x -= self.speed
+        if self.direction == "left" and self.x - self.radius < 1000:
+            self.x += self.speed
+
+        if 0 < self.gunangle + self.rotatespeed <= 180:
+            self.gunangle += self.rotatespeed
+        else:
+            self.rotatespeed = 0
+
+
+class Bullet:
+    def __init__(self, x, y, bangle):
+        self.bulletx = x
+        self.bullety = y
+        self.bulletradius = 5
+        self.bspeed = 5
+        brad = math.radians(bangle)
+        self.dx = self.bspeed * math.cos(brad)
+        self.dy = self.bspeed * math.sin(brad)
+
+    def bulletmove(self):
+        self.bullety += self.dy
+        self.bulletx += self.dx
+
+    def bulletdraw(self):
+        stddraw.setPenColor(stddraw.PINK)
+        stddraw.filledCircle(self.bulletx, self.bullety, self.bulletradius)
+        stddraw.setPenColor(stddraw.WHITE)
+        stddraw.text(
+            self.bulletx + 20,
+            self.bullety + 10,
+            f"{int(self.bulletx)}, {int(self.bullety)})",
+        )
+
+
+class Aliens:
+    def __init__(self, x, y):
+        self.alienx = x
+        self.alieny = y
+        self.aliensize = 20
+
+    def draw(self):
+        stddraw.setPenColor(stddraw.ORANGE)
+        stddraw.filledCircle(self.alienx, self.alieny, self.aliensize)
+
+    def xmove(self, dx):
+        self.alienx = self.alienx + dx
+
+    def ymove(self, dy):
+        self.alieny = self.alieny - dy
+
+
+def main():
+    title()
+    shooter = player()  # refers to instance/object of player class
+    playing = True
+    prev_key = ""
+    bullet_list = []
+    alien_list = []
+    cooldown = 0
+    shoot_interval = 10
+    row = 4
+    col = 5
+    space_x = 100
+    space_y = 100
+    startx = 100
+    starty = 950
+    alien_dx = 1
+    message_timer = 0
+    message = "Alien hit!"
+    hit_edge = False
+    score = 0
+    score_timer = 0
+    for r in range(row):
+        for c in range(col):
+            alien = Aliens(startx + c * space_x, starty - r * space_y)
+            alien_list.append(alien)
+    while playing:
+        gamescreen()
+        shooter.gunmovement()
+        if stddraw.hasNextKeyTyped():  # only checks the current key that has been typed
+            key = stddraw.nextKeyTyped().lower()
+            if key == "x":
+                playing = False
+            elif key in ["a", "d"]:
+                prev_key = key  # current key is a or d,  stores in prev_key so elif statements occur for this key
+            elif key == " ":
+                rad = math.radians(shooter.gunangle)
+                start_x = shooter.x + (shooter.radius + 10) * math.cos(rad)
+                start_y = shooter.y + (shooter.radius + 10) * math.sin(rad)
+                bullet_new = Bullet(start_x, start_y, shooter.gunangle)
+                bullet_list.append(bullet_new)
+                cooldown = 0
+                print(
+                    f"Shot bullet from ({start_x}, {start_y}) at angle {shooter.gunangle}"
+                )
+            elif key == "s":
+                shooter.direction = None
+            elif key == "q":
+                shooter.rotatespeed = 0.5
+            elif key == "e":
+                shooter.rotatespeed = -0.5
+            elif key == "w":
+                shooter.rotatespeed = 0
+
+        if prev_key == "a":
+            shooter.pmoveleft()
+        if prev_key == "d":
+            shooter.pmoveright()
+        # if key == "space": shooter.bullet()
+        # player.draw() doesnt work because draw() is an instance method, needs specific player object
+
+        edge = False
+        min_x = min(alien.alienx for alien in alien_list) if alien_list else 0
+        max_x = max(alien.alienx for alien in alien_list) if alien_list else 1000
+        if (
+            max_x + alien_list[0].aliensize > 1000
+            or min_x - alien_list[0].aliensize / 2 < 0
+        ):
+            edge = True
+        for alien in alien_list:
+            alien.xmove(alien_dx)
+            if alien.alienx + alien.aliensize / 2 > 1000 or alien.aliensize / 2 < 0:
+                edge = True
+        # for alien in alien_list:
+        # alien.xmove(alien_dx)
+        if edge and not hit_edge:
+            alien_dx = -alien_dx
+            for alien in alien_list:
+                alien.ymove(30)
+            hit_edge = True
+        elif not edge:
+            hit_edge = False
+        shooter.draw()
+        for b in bullet_list[:]:
+            b.bulletmove()
+            b.bulletdraw()
+            if b.bullety < 0 or b.bulletx < 0 or b.bulletx > 1000:
+                bullet_list.remove(b)
+            for alien in alien_list[:]:
+                dx = abs(b.bulletx - alien.alienx)
+                dy = abs(b.bullety - alien.alieny)
+                if dx < (alien.aliensize / 2 + b.bulletradius) and dy < (
+                    alien.aliensize / 2 + b.bulletradius
+                ):
+                    alien_list.remove(alien)
+                    bullet_list.remove(b)
+                    message_timer = 40
+                    score += 1
+                    break
+        for alien in alien_list:
+            alien.draw()
+        if message_timer > 0:
+            stddraw.text(800, 200, message)
+            message_timer -= 1
+        score_message = str(score)
+        score_is = "score is:"
+        stddraw.text(850, 400, score_is)
+        stddraw.text(900, 400, score_message)
+        if len(alien_list) == 0:
+            stddraw.clear(stddraw.GRAY)
+            win_end = "You Won! :)"
+            stddraw.text(500, 500, win_end)
+        if alien.alieny - alien.aliensize/2 <= 200:
+            stddraw.clear(stddraw.GRAY)
+            lose_end = "You Lost! :("
+            stddraw.text(500, 600, lose_end)
+            stddraw.text(500, 550, score_is)
+            stddraw.text(500, 500, score_message)
+        stddraw.show(20)
+
+
+if __name__ == "__main__":
+    main()
