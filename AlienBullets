@@ -1,3 +1,5 @@
+import stddraw
+
 class AlienBullet:
     def __init__(self, x, y):
         self.AlienBulletx = x
