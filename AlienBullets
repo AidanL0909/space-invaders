@@ -1,0 +1,15 @@
+class AlienBullet:
+    def __init__(self, x, y):
+        self.AlienBulletx = x
+        self.AlienBullety = y
+        self.AlienBulletRadius = 5
+        self.AlienBulletSpeed = 4
+        self.Aliendy = -self.AlienBulletSpeed
+        speed = 0.01
+
+    def AlienBulletMove(self):
+        self.AlienBullety += self.Aliendy
+
+    def AlienBulletDraw(self):
+        stddraw.setPenColor(stddraw.YELLOW)
+        stddraw.filledCircle(self.AlienBulletx, self.AlienBullety, self.AlienBulletRadius)
