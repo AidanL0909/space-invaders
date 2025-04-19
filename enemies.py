@@ -1,28 +1,20 @@
-
 import stddraw
-import math
 
 class Enemies:
-
-    def __init__(self,x,y,speed = 0.005):
-        
+    def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.active = True
-        self.speed = speed
-        self.rad = 0.05
+        self.size = 2.5
+        self.speed= 0.3
+        self.direction = 1
 
-    def update(self):
-        self.y -= self.speed
-        if self.y < 0 or self.y > 1:
-            self.active = False
+    def enemyMovement(self):
+        self.x += self.speed * self.direction
 
-    def draw(self):
-        if self.active:
-            stddraw.setPenColor(stddraw.GREEN)
-            stddraw.filledCircle(self.x, self.y, self.rad)
+    def down(self):
+        self.y -= 4
+        self.direction *= -1
 
-    def check_collision(self, bullet):
-        distance = math.sqrt((self.x - bullet.x) ** 2 + (self.y - bullet.y) ** 2)
-        return distance < (self.rad + bullet.rad)
-
+    def drawEnemies(self):
+        stddraw.setPenColor(stddraw.YELLOW)
+        stddraw.filledSquare(self.x,self.y, self.size)
